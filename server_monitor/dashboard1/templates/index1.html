@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Server Monitor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .alert { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+<h2>Server Monitor Dashboard</h2>
+
+<canvas id="cpuChart" width="600" height="200"></canvas>
+<canvas id="memChart" width="600" height="200"></canvas>
+<canvas id="diskChart" width="600" height="200"></canvas>
+
+<h3>Latest Alerts</h3>
+<ul id="alerts"></ul>
+
+<script>
+let cpuChart, memChart, diskChart;
+
+function createChart(ctx, label, color) {
+    return new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: label,
+                data: [],
+                borderColor: color,
+                fill: false,
+                tension: 0.2
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function updateCharts(data) {
+    const timestamps = data.map(d => d.timestamp);
+    const cpu = data.map(d => d.cpu);
+    const mem = data.map(d => d.mem);
+    const disk = data.map(d => d.disk);
+
+    cpuChart.data.labels = timestamps;
+    cpuChart.data.datasets[0].data = cpu;
+
+    memChart.data.labels = timestamps;
+    memChart.data.datasets[0].data = mem;
+
+    diskChart.data.labels = timestamps;
+    diskChart.data.datasets[0].data = disk;
+
+    cpuChart.update();
+    memChart.update();
+    diskChart.update();
+}
+
+function updateAlerts(data) {
+    const alerts = [];
+    data.forEach(d => {
+        if (d.cpu_alert) alerts.push(`High CPU: ${d.cpu}% at ${d.timestamp}`);
+        if (d.mem_alert) alerts.push(`High Memory: ${d.mem}% at ${d.timestamp}`);
+        if (d.disk_alert) alerts.push(`High Disk: ${d.disk}% at ${d.timestamp}`);
+    });
+    const ul = document.getElementById('alerts');
+    ul.innerHTML = '';
+    alerts.slice(-10).forEach(a => {
+        const li = document.createElement('li');
+        li.textContent = a;
+        li.className = 'alert';
+        ul.appendChild(li);
+    });
+}
+
+async function fetchData() {
+    const res = await fetch("/api/logs");
+    const data = await res.json();
+    updateCharts(data);
+    updateAlerts(data);
+}
+
+window.onload = function() {
+    cpuChart = createChart(document.getElementById('cpuChart'), 'CPU Usage (%)', 'red');
+    memChart = createChart(document.getElementById('memChart'), 'Memory Usage (%)', 'blue');
+    diskChart = createChart(document.getElementById('diskChart'), 'Disk Usage (%)', 'green');
+
+    fetchData();
+    setInterval(fetchData, 5000); // refresh every 5 seconds
+};
+</script>
+</body>
+</html>
+

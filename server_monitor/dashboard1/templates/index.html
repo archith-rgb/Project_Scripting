@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Server Monitor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<h1>Server Monitor Dashboard</h1>
+
+<canvas id="cpuChart" width="800" height="200"></canvas>
+<canvas id="memChart" width="800" height="200"></canvas>
+<canvas id="diskChart" width="800" height="200"></canvas>
+<canvas id="netChart" width="800" height="200"></canvas>
+
+<script>
+let cpuChart, memChart, diskChart, netChart;
+
+function createChart(ctx, label, color) {
+    return new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label, data: [], borderColor: color, fill: false }] },
+        options: { scales: { y: { min: 0, max: 100 } } }
+    });
+}
+
+function updateCharts(logs) {
+    cpuChart.data.labels = logs.map(a => a.timestamp);
+    cpuChart.data.datasets[0].data = logs.map(a => a.cpu);
+    cpuChart.update();
+
+    memChart.data.labels = logs.map(a => a.timestamp);
+    memChart.data.datasets[0].data = logs.map(a => a.mem);
+    memChart.update();
+
+    diskChart.data.labels = logs.map(a => a.timestamp);
+    diskChart.data.datasets[0].data = logs.map(a => a.disk);
+    diskChart.update();
+
+    netChart.data.labels = logs.map(a => a.timestamp);
+    netChart.data.datasets[0].data = logs.map(a => a.net);
+    netChart.update();
+}
+
+async function fetchLogs() {
+    const res = await fetch("/api/logs");
+    const data = await res.json();
+    updateCharts(data);
+}
+
+window.onload = () => {
+    cpuChart = createChart(document.getElementById("cpuChart"), "CPU (%)", "red");
+    memChart = createChart(document.getElementById("memChart"), "Memory (%)", "blue");
+    diskChart = createChart(document.getElementById("diskChart"), "Disk (%)", "green");
+    netChart = createChart(document.getElementById("netChart"), "Network (ms)", "purple");
+
+    fetchLogs();
+    setInterval(fetchLogs, 5000); // refresh every 5 seconds
+};
+</script>
+
+</body>
+</html>
+
