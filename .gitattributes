@@ -1,3 +1,3 @@
-server_monitor/dashboard1/*.html linguist-vendored
-server_monitor/dashboard1/*.css linguist-vendored
-server_monitor/dashboard1/*.js linguist-vendored
+server_monitor/*.html linguist-vendored
+server_monitor/*.css linguist-vendored
+server_monitor/*.js linguist-vendored
